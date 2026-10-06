@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#09090b">
+    <title>NutriTrack — Your Diet Tracker</title>
+    <meta name="description" content="Personal diet and nutrition tracker for daily food intake, calorie counting, and protein tracking.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Scanline Overlay -->
+    <div class="grain-overlay"></div>
+
+    <!-- HUD Corner Markers -->
+    <div class="hud-corners"></div>
+
+    <!-- Cursor Glow -->
+    <div class="cursor-glow" id="cursor-glow"></div>
+
+    <!-- Floating Food Decorations -->
+    <div class="floating-foods" id="floating-foods"></div>
+
+    <!-- Confetti Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo" style="border: none; background: transparent; padding: 2px;">
+                <img src="logo.png" alt="NutriTrack Logo" style="width: 100%; height: 100%; object-fit: contain;">
+            </div>
+            <div class="brand-name">
+                <span class="brand-title">NutriTrack</span>
+                <span class="brand-tagline">fuel your gains</span>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <span class="nav-label">MENU</span>
+            <a href="#" class="nav-link active" data-page="dashboard" id="nav-dashboard">
+                <div class="nav-icon">📊</div>
+                <span>Dashboard</span>
+                <div class="nav-indicator"></div>
+            </a>
+            <a href="#" class="nav-link" data-page="foods" id="nav-foods">
+                <div class="nav-icon">🍱</div>
+                <span>Food Database</span>
+                <div class="nav-indicator"></div>
+            </a>
+            <a href="#" class="nav-link" data-page="goals" id="nav-goals">
+                <div class="nav-icon">🎯</div>
+                <span>Goals</span>
+                <div class="nav-indicator"></div>
+            </a>
+            <a href="#" class="nav-link" data-page="history" id="nav-history">
+                <div class="nav-icon">📈</div>
+                <span>History</span>
+                <div class="nav-indicator"></div>
+            </a>
+        </div>
+
+        <div class="sidebar-settings" style="display: flex; align-items: center; justify-content: center; padding: 14px 18px;">
+            <button class="theme-toggle" aria-label="Toggle Theme">
+                <span class="theme-icon moon">🌙</span>
+                <span class="theme-icon sun">☀️</span>
+                <div class="theme-switch"></div>
+            </button>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-card" id="sidebar-profile-btn" style="cursor:pointer;" title="Switch Profile">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a0a0a0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>" alt="User" class="user-avatar" id="sidebar-avatar" style="background:var(--bg-input); padding: 4px;">
+                <div class="user-info">
+                    <span class="user-name" id="sidebar-user-name">User</span>
+                    <span class="user-role" id="sidebar-user-role">Set up profile</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2" style="margin-left:auto;flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Top Bar -->
+    <div class="mobile-topbar" id="mobile-topbar">
+        <button class="hamburger" id="hamburger-btn" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <span class="mobile-brand">⚡ NutriTrack</span>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Theme" style="margin-left: 10px;">
+            <span class="theme-icon moon">🌙</span>
+            <span class="theme-icon sun">☀️</span>
+            <div class="theme-switch"></div>
+        </button>
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a0a0a0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>" alt="User" class="mobile-avatar" id="mobile-avatar-btn" style="margin-left: auto; cursor:pointer; background:var(--bg-input); padding: 4px;" title="Switch Profile">
+    </div>
+
+    <!-- Return to Alfred Button (Hidden by default) -->
+    <button id="returnToAlfredBtn" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 10000; background: #ffaa00; color: #000; border: none; padding: 12px 24px; font-weight: 800; border-radius: 30px; cursor: pointer; font-family: 'Outfit', sans-serif; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.4); text-transform: uppercase; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+        <span style="margin-right: 8px;">←</span> RETURN TO ALFRED
+    </button>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+
+        <!-- ============ DASHBOARD PAGE ============ -->
+        <section class="page active" id="page-dashboard">
+
+            <!-- Compact Greeting Header -->
+            <div class="hero-banner reveal">
+                <div class="hero-content">
+                    <p class="hero-date" id="today-date" style="text-transform: uppercase; letter-spacing: 2px; color: var(--text-3); font-size: 0.75rem; margin-bottom: 12px; font-weight: 600;"></p>
+                    <div class="hero-greeting" style="align-items: flex-end; margin-bottom: 20px;">
+                        <h1 id="greeting-text" style="font-size: 2.8rem; line-height: 1;">Good Evening</h1>
+                        <span class="hero-wave" style="font-size: 2.2rem; margin-left: 8px;">👋</span>
+                    </div>
+                    <div class="hero-motivation" style="margin-bottom: 25px;">
+                        <p id="hero-motivation-text" style="font-size: 1rem; color: var(--text-2); max-width: 90%; line-height: 1.5; font-family: 'Inter', sans-serif;">"Discipline is doing what you hate to do, but doing it like you love it." — Mike Tyson</p>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <span style="border: 1px solid rgba(0,255,65,0.3); color: var(--green); padding: 8px 14px; border-radius: var(--r-sm); font-size: 0.75rem; font-family: 'Courier New', monospace; font-weight: bold; background: rgba(0,255,65,0.05); text-transform: uppercase; letter-spacing: 1px;">🔥 <span id="hero-streak-badge">5</span> DAY STREAK</span>
+                        <span style="border: 1px solid rgba(255,159,67,0.3); color: var(--cal); padding: 8px 14px; border-radius: var(--r-sm); font-size: 0.75rem; font-family: 'Courier New', monospace; font-weight: bold; background: rgba(255,159,67,0.05); text-transform: uppercase; letter-spacing: 1px;"><span id="hero-cal-badge">1445 / 2200</span> KCAL</span>
+                    </div>
+                </div>
+                <div class="hero-image" style="width: 280px; height: 380px; margin-left: 30px; box-shadow: none; border: none; border-radius: var(--r-lg);">
+                    <img src="motivation.jpg" alt="Workout Motivation" style="border-radius: var(--r-lg);">
+                </div>
+            </div>
+
+            <!-- Two-Column Overview: Calorie Ring + Macros -->
+            <div class="dash-overview-grid">
+                <!-- LEFT: Calorie Overview Card -->
+                <div class="overview-card reveal reveal-delay-1">
+                    <div class="overview-card-header">
+                        <span class="overview-card-icon">🔥</span>
+                        <span class="overview-card-title">Calorie Overview</span>
+                        <div class="stat-auto-badge" id="cal-auto-badge" title="Auto-calculated from your goals">⚡ Auto</div>
+                    </div>
+                    <div class="overview-ring-area">
+                        <div class="stat-ring-wrap overview-ring">
+                            <svg class="stat-ring" viewBox="0 0 120 120">
+                                <circle class="ring-track" cx="60" cy="60" r="50"/>
+                                <circle class="ring-progress cal-progress" cx="60" cy="60" r="50" id="cal-ring"/>
+                            </svg>
+                            <div class="stat-ring-center">
+                                <span class="stat-number counter" id="cal-consumed" data-target="0">0</span>
+                                <span class="stat-unit-small">kcal</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overview-stats-row">
+                        <div class="overview-stat-item">
+                            <span class="overview-stat-label">Goal</span>
+                            <strong class="overview-stat-val" id="cal-target">2500</strong>
+                        </div>
+                        <div class="overview-stat-divider"></div>
+                        <div class="overview-stat-item">
+                            <span class="overview-stat-label">Remaining</span>
+                            <strong class="overview-stat-val overview-remaining" id="cal-remaining">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MIDDLE: Protein Overview Card -->
+                <div class="overview-card reveal reveal-delay-2">
+                    <div class="overview-card-header">
+                        <span class="overview-card-icon">💪</span>
+                        <span class="overview-card-title">Protein Overview</span>
+                        <div class="stat-auto-badge" id="pro-auto-badge" title="Auto-calculated from your goals">⚡ Auto</div>
+                    </div>
+                    <div class="overview-ring-area">
+                        <div class="stat-ring-wrap overview-ring">
+                            <svg class="stat-ring" viewBox="0 0 120 120">
+                                <circle class="ring-track" cx="60" cy="60" r="50"/>
+                                <circle class="ring-progress pro-progress" cx="60" cy="60" r="50" id="pro-ring"/>
+                            </svg>
+                            <div class="stat-ring-center">
+                                <span class="stat-number counter" id="pro-consumed" data-target="0">0</span>
+                                <span class="stat-unit-small">g</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overview-stats-row">
+                        <div class="overview-stat-item">
+                            <span class="overview-stat-label">Goal</span>
+                            <strong class="overview-stat-val" id="pro-target">120</strong>
+                        </div>
+                        <div class="overview-stat-divider"></div>
+                        <div class="overview-stat-item">
+                            <span class="overview-stat-label">Remaining</span>
+                            <strong class="overview-stat-val overview-remaining" id="pro-remaining" style="color:var(--pro); text-shadow:0 0 8px var(--pro-glow);">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Macros Today Card -->
+                <div class="macros-card reveal reveal-delay-3">
+                    <div class="overview-card-header">
+                        <span class="overview-card-icon">📊</span>
+                        <span class="overview-card-title">Macros Today</span>
+                    </div>
+
+                    <!-- Calories Bar -->
+                    <div class="macro-progress-row">
+                        <div class="macro-progress-icon">🔥</div>
+                        <div class="macro-progress-info">
+                            <div class="macro-progress-top">
+                                <span class="macro-progress-name">Calories</span>
+                                <span class="macro-progress-nums"><strong id="macro-cal-current">0</strong> / <span id="macro-cal-target">2500</span> kcal</span>
+                            </div>
+                            <div class="macro-progress-bar">
+                                <div class="macro-progress-fill cal-bar-fill" id="macro-cal-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Protein Bar -->
+                    <div class="macro-progress-row">
+                        <div class="macro-progress-icon">💪</div>
+                        <div class="macro-progress-info">
+                            <div class="macro-progress-top">
+                                <span class="macro-progress-name">Protein</span>
+                                <span class="macro-progress-nums"><strong id="macro-pro-current">0</strong>g / <span id="macro-pro-target">120</span>g</span>
+                            </div>
+                            <div class="macro-progress-bar">
+                                <div class="macro-progress-fill pro-bar-fill" id="macro-pro-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weight Bar -->
+                    <div class="macro-progress-row">
+                        <div class="macro-progress-icon">⚖️</div>
+                        <div class="macro-progress-info">
+                            <div class="macro-progress-top">
+                                <span class="macro-progress-name">Weight</span>
+                                <span class="macro-progress-nums"><strong id="current-weight-display">43</strong>kg → <span id="target-weight-display">60</span>kg</span>
+                            </div>
+                            <div class="macro-progress-bar">
+                                <div class="macro-progress-fill weight-bar-fill-v2" id="weight-progress-fill"></div>
+                            </div>
+                            <div class="macro-progress-sub" id="weight-days-left">Set target in Goals</div>
+                        </div>
+                    </div>
+
+                    <!-- Streak -->
+                    <div class="macro-progress-row streak-row">
+                        <div class="macro-progress-icon">🔥</div>
+                        <div class="macro-progress-info">
+                            <div class="macro-progress-top">
+                                <span class="macro-progress-name">Streak</span>
+                                <span class="macro-progress-nums"><strong class="counter" id="streak-count" data-target="0">0</strong> days</span>
+                            </div>
+                            <div class="streak-dots" id="streak-dots"></div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden elements JS needs but aren't visually shown in this layout -->
+                    <div style="display:none">
+                        <span id="weight-bar-label"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goal Status Banner -->
+            <div class="goal-banner reveal" id="goal-banner">
+                <div class="banner-icon" id="goal-banner-icon">⏳</div>
+                <div class="banner-content">
+                    <h3 id="goal-banner-title">Keep going!</h3>
+                    <p id="goal-banner-subtitle">You still have calories and protein to hit today.</p>
+                </div>
+                <div class="banner-progress">
+                    <div class="mini-ring cal-mini">
+                        <svg viewBox="0 0 36 36">
+                            <circle class="ring-track-mini" cx="18" cy="18" r="15"/>
+                            <circle class="ring-fill-mini cal-fill-mini" cx="18" cy="18" r="15" id="banner-cal-ring"/>
+                        </svg>
+                        <span class="mini-label">Cal</span>
+                    </div>
+                    <div class="mini-ring pro-mini">
+                        <svg viewBox="0 0 36 36">
+                            <circle class="ring-track-mini" cx="18" cy="18" r="15"/>
+                            <circle class="ring-fill-mini pro-fill-mini" cx="18" cy="18" r="15" id="banner-pro-ring"/>
+                        </svg>
+                        <span class="mini-label">Pro</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADD FOOD SECTION — INLINE IN MIDDLE -->
+            <div class="add-food-section reveal">
+                <div class="section-title-row">
+                    <h2>What did you eat? 🍽️</h2>
+                    <button class="btn-icon" id="btn-new-food-from-dash" title="Create new food">
+                        <span>+</span> New Food
+                    </button>
+                </div>
+                <div class="food-search-inline">
+                    <div class="search-input-wrap">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" placeholder="Search for a food item..." id="inline-food-search" autocomplete="off">
+                        <kbd class="search-shortcut">⌘K</kbd>
+                    </div>
+                    <div class="inline-search-results" id="inline-search-results"></div>
+                </div>
+
+                <!-- Quick Picks -->
+                <div class="quick-picks" id="quick-picks">
+                    <span class="quick-pick-label">Quick picks:</span>
+                    <div class="quick-pick-chips" id="quick-pick-chips"></div>
+                </div>
+            </div>
+
+            <!-- 4 Meal Columns (Breakfast, Lunch, Dinner, Snacks) -->
+            <div class="meal-columns-section reveal">
+                <div class="meal-column" id="meal-col-breakfast">
+                    <div class="meal-col-header">
+                        <div class="meal-col-title-row">
+                            <h3>🍳 Breakfast</h3>
+                            <button class="meal-add-btn" data-meal="Breakfast" title="Add Breakfast">+</button>
+                        </div>
+                        <div class="meal-col-stats">
+                            <span class="meal-stat cal-tag"><span id="breakfast-cal">0</span> kcal</span>
+                            <span class="meal-stat pro-tag"><span id="breakfast-pro">0</span>g</span>
+                        </div>
+                    </div>
+                    <div class="meal-log-list" id="log-breakfast">
+                        <div class="empty-meal">Add food</div>
+                    </div>
+                </div>
+
+                <div class="meal-column" id="meal-col-lunch">
+                    <div class="meal-col-header">
+                        <div class="meal-col-title-row">
+                            <h3>🥗 Lunch</h3>
+                            <button class="meal-add-btn" data-meal="Lunch" title="Add Lunch">+</button>
+                        </div>
+                        <div class="meal-col-stats">
+                            <span class="meal-stat cal-tag"><span id="lunch-cal">0</span> kcal</span>
+                            <span class="meal-stat pro-tag"><span id="lunch-pro">0</span>g</span>
+                        </div>
+                    </div>
+                    <div class="meal-log-list" id="log-lunch">
+                        <div class="empty-meal">Add food</div>
+                    </div>
+                </div>
+
+                <div class="meal-column" id="meal-col-dinner">
+                    <div class="meal-col-header">
+                        <div class="meal-col-title-row">
+                            <h3>🍲 Dinner</h3>
+                            <button class="meal-add-btn" data-meal="Dinner" title="Add Dinner">+</button>
+                        </div>
+                        <div class="meal-col-stats">
+                            <span class="meal-stat cal-tag"><span id="dinner-cal">0</span> kcal</span>
+                            <span class="meal-stat pro-tag"><span id="dinner-pro">0</span>g</span>
+                        </div>
+                    </div>
+                    <div class="meal-log-list" id="log-dinner">
+                        <div class="empty-meal">Add food</div>
+                    </div>
+                </div>
+
+                <div class="meal-column" id="meal-col-snacks">
+                    <div class="meal-col-header">
+                        <div class="meal-col-title-row">
+                            <h3>🥨 Snacks</h3>
+                            <button class="meal-add-btn" data-meal="Snacks" title="Add Snack">+</button>
+                        </div>
+                        <div class="meal-col-stats">
+                            <span class="meal-stat cal-tag"><span id="snacks-cal">0</span> kcal</span>
+                            <span class="meal-stat pro-tag"><span id="snacks-pro">0</span>g</span>
+                        </div>
+                    </div>
+                    <div class="meal-log-list" id="log-snacks">
+                        <div class="empty-meal">Add food</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ FOOD DATABASE PAGE ============ -->
+        <section class="page" id="page-foods">
+            <div class="page-header-flex">
+                <div>
+                    <h1 class="page-title">Food Database</h1>
+                    <p class="page-sub">Your saved foods and their nutritional info</p>
+                </div>
+                <button class="btn btn-accent" id="btn-add-new-food">
+                    <span>+</span> Add New Food
+                </button>
+            </div>
+
+            <div class="search-input-wrap standalone-search">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" placeholder="Search your foods..." id="food-search-input">
+            </div>
+
+            <div class="food-grid" id="food-database-list">
+                <div class="empty-state" id="empty-db">
+                    <div class="empty-emoji">📦</div>
+                    <h3>No foods saved yet</h3>
+                    <p>Add your first food item to get started</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ GOALS PAGE ============ -->
+        <section class="page" id="page-goals">
+            <div class="page-header-flex">
+                <div>
+                    <h1 class="page-title">Goals & Targets</h1>
+                    <p class="page-sub">Set your body stats and the app calculates your daily needs</p>
+                </div>
+            </div>
+
+            <div class="goals-layout">
+                <!-- Body Stats Card -->
+                <div class="goal-section-card">
+                    <div class="goal-section-header">
+                        <span class="goal-section-icon">🧍</span>
+                        <div>
+                            <h3>Your Body Stats</h3>
+                            <p>Used to calculate your BMR and TDEE</p>
+                        </div>
+                    </div>
+                    <div class="goal-form-grid">
+                        <div class="form-field">
+                            <label for="goal-age">Age</label>
+                            <div class="input-unit-wrap">
+                                <input type="number" id="goal-age" class="form-input" placeholder="18" min="10" max="100">
+                                <span class="input-unit">years</span>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label for="goal-gender">Gender</label>
+                            <select id="goal-gender" class="form-input">
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label for="goal-height">Height</label>
+                            <div class="input-unit-wrap">
+                                <input type="number" id="goal-height" class="form-input" placeholder="162" min="100" max="250">
+                                <span class="input-unit">cm</span>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label for="goal-activity">Activity Level</label>
+                            <select id="goal-activity" class="form-input">
+                                <option value="1.2">Sedentary (little/no exercise)</option>
+                                <option value="1.375">Lightly active (1-3 days/week)</option>
+                                <option value="1.55">Moderately active (3-5 days/week)</option>
+                                <option value="1.725">Very active (6-7 days/week)</option>
+                                <option value="1.9">Extra active (athlete)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weight Goal Card -->
+                <div class="goal-section-card">
+                    <div class="goal-section-header">
+                        <span class="goal-section-icon">⚖️</span>
+                        <div>
+                            <h3>Weight Goal</h3>
+                            <p>Your current weight, target, and deadline</p>
+                        </div>
+                    </div>
+                    <div class="goal-form-grid">
+                        <div class="form-field">
+                            <label for="goal-current-weight">Current Weight</label>
+                            <div class="input-unit-wrap">
+                                <input type="number" id="goal-current-weight" class="form-input" placeholder="43" min="20" max="300" step="0.1">
+                                <span class="input-unit">kg</span>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label for="goal-target-weight">Target Weight</label>
+                            <div class="input-unit-wrap">
+                                <input type="number" id="goal-target-weight" class="form-input" placeholder="60" min="20" max="300" step="0.1">
+                                <span class="input-unit">kg</span>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label for="goal-target-date">Target Date</label>
+                            <input type="date" id="goal-target-date" class="form-input" onclick="try{this.showPicker()}catch(e){}" style="cursor: pointer;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calculated Values -->
+                <div class="goal-section-card calculated-card">
+                    <div class="goal-section-header">
+                        <span class="goal-section-icon">⚡</span>
+                        <div>
+                            <h3>Your Calculated Daily Needs</h3>
+                            <p>Auto-calculated based on your stats above</p>
+                        </div>
+                    </div>
+                    <div class="calc-results" id="calc-results">
+                        <div class="calc-item">
+                            <div class="calc-icon">🫀</div>
+                            <div class="calc-info">
+                                <span class="calc-label">BMR (Basal Metabolic Rate)</span>
+                                <span class="calc-value" id="calc-bmr">--</span>
+                                <span class="calc-desc">Calories your body burns at rest</span>
+                            </div>
+                        </div>
+                        <div class="calc-item">
+                            <div class="calc-icon">🏃</div>
+                            <div class="calc-info">
+                                <span class="calc-label">TDEE (Maintenance Calories)</span>
+                                <span class="calc-value" id="calc-tdee">--</span>
+                                <span class="calc-desc">Calories to maintain current weight</span>
+                            </div>
+                        </div>
+                        <div class="calc-item highlight-cal">
+                            <div class="calc-icon">🔥</div>
+                            <div class="calc-info">
+                                <span class="calc-label">Daily Calorie Target</span>
+                                <span class="calc-value big" id="calc-daily-cal">--</span>
+                                <span class="calc-desc" id="calc-cal-desc">TDEE + surplus for weight gain</span>
+                            </div>
+                        </div>
+                        <div class="calc-item highlight-pro">
+                            <div class="calc-icon">💪</div>
+                            <div class="calc-info">
+                                <span class="calc-label">Daily Protein Target</span>
+                                <span class="calc-value big" id="calc-daily-pro">--</span>
+                                <span class="calc-desc">1.8g per kg of current body weight</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BMI Display -->
+                    <div class="bmi-section">
+                        <div class="bmi-header">
+                            <span>BMI</span>
+                            <span class="bmi-val" id="bmi-value">--</span>
+                            <span class="bmi-cat" id="bmi-label"></span>
+                        </div>
+                        <div class="bmi-track">
+                            <div class="bmi-zone bmi-under"></div>
+                            <div class="bmi-zone bmi-normal"></div>
+                            <div class="bmi-zone bmi-over"></div>
+                            <div class="bmi-zone bmi-obese"></div>
+                            <div class="bmi-marker" id="bmi-indicator"></div>
+                        </div>
+                        <div class="bmi-labels">
+                            <span>Underweight</span>
+                            <span>Normal</span>
+                            <span>Overweight</span>
+                            <span>Obese</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Override -->
+                <div class="goal-section-card">
+                    <div class="goal-section-header">
+                        <span class="goal-section-icon">✏️</span>
+                        <div>
+                            <h3>Manual Override (Optional)</h3>
+                            <p>Override the auto-calculated values if you want custom targets</p>
+                        </div>
+                    </div>
+                    <div class="goal-form-grid">
+                        <div class="form-field">
+                            <label for="goal-manual-calories">Custom Calorie Target</label>
+                            <div class="input-unit-wrap">
+                                <input type="number" id="goal-manual-calories" class="form-input" placeholder="Auto-calculated" min="500" max="10000">
+                                <span class="input-unit">kcal</span>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label for="goal-manual-protein">Custom Protein Target</label>
+                            <div class="input-unit-wrap">
+                                <input type="number" id="goal-manual-protein" class="form-input" placeholder="Auto-calculated" min="10" max="500">
+                                <span class="input-unit">g</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-accent btn-wide" id="btn-save-goals">
+                Save Goals
+            </button>
+        </section>
+
+        <!-- ============ HISTORY PAGE ============ -->
+        <section class="page" id="page-history">
+            <div class="page-header-flex">
+                <div>
+                    <h1 class="page-title">History</h1>
+                    <p class="page-sub">Review your past daily intake</p>
+                </div>
+            </div>
+
+            <div class="history-list" id="history-list">
+                <div class="empty-state" id="empty-history">
+                    <div class="empty-emoji">📅</div>
+                    <h3>No history yet</h3>
+                    <p>Your daily logs will appear here after each day</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ============ ADD-TO-LOG MODAL (from inline selection) ============ -->
+    <div class="modal-overlay" id="modal-add-food">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-add-title">Add to Log</h2>
+                <button class="modal-close" id="modal-add-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-food-preview" id="modal-food-preview">
+                    <img id="modal-food-img" class="modal-food-thumb" src="" alt="">
+                    <div>
+                        <h3 id="modal-food-name"></h3>
+                        <p id="modal-food-meta" class="modal-meta"></p>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label for="modal-quantity">Quantity</label>
+                    <div class="input-unit-wrap">
+                        <input type="number" id="modal-quantity" class="form-input" min="0.1" step="0.1" value="1">
+                        <span class="input-unit" id="modal-quantity-unit">nos</span>
+                    </div>
+                </div>
+                <div class="nutrition-preview-row">
+                    <div class="preview-box cal-box">
+                        <span class="preview-num" id="preview-calories">0</span>
+                        <span class="preview-unit">kcal</span>
+                    </div>
+                    <div class="preview-box pro-box">
+                        <span class="preview-num" id="preview-protein">0</span>
+                        <span class="preview-unit">g protein</span>
+                    </div>
+                </div>
+                <button class="btn btn-accent btn-wide" id="btn-confirm-add">Add to Today's Log</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ NEW FOOD MODAL ============ -->
+    <div class="modal-overlay" id="modal-new-food">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Create New Food</h2>
+                <button class="modal-close" id="modal-new-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-field">
+                    <label for="new-food-name">Food Name</label>
+                    <input type="text" id="new-food-name" class="form-input" placeholder="e.g. Boiled Egg">
+                </div>
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label for="new-food-unit">Unit</label>
+                        <select id="new-food-unit" class="form-input">
+                            <option value="nos">Numbers (nos)</option>
+                            <option value="g">Grams (g)</option>
+                            <option value="ml">Milliliters (ml)</option>
+                            <option value="cup">Cups</option>
+                            <option value="tbsp">Tablespoon</option>
+                            <option value="slice">Slices</option>
+                            <option value="bowl">Bowls</option>
+                            <option value="plate">Plates</option>
+                            <option value="scoop">Scoops</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="new-food-serving">Serving Size <span class="hint" id="serving-hint">(per 1 nos)</span></label>
+                        <input type="number" id="new-food-serving" class="form-input" value="1" min="0.1" step="0.1">
+                    </div>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label for="new-food-calories">Calories <span class="hint">(per serving)</span></label>
+                        <div class="input-unit-wrap">
+                            <input type="number" id="new-food-calories" class="form-input" placeholder="78" min="0" step="0.1">
+                            <span class="input-unit">kcal</span>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label for="new-food-protein">Protein <span class="hint">(per serving)</span></label>
+                        <div class="input-unit-wrap">
+                            <input type="number" id="new-food-protein" class="form-input" placeholder="6.3" min="0" step="0.1">
+                            <span class="input-unit">g</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label for="new-food-image">Image URL <span class="hint">(optional — paste a link to a food photo)</span></label>
+                    <input type="text" id="new-food-image" class="form-input" placeholder="https://...">
+                </div>
+                <button class="btn btn-accent btn-wide" id="btn-save-new-food">Save Food Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ PROFILE PICKER MODAL ============ -->
+    <div class="modal-overlay" id="modal-profile-picker">
+        <div class="modal profile-modal">
+            <div class="modal-header">
+                <h2>👤 Switch Profile</h2>
+                <button class="modal-close" id="modal-profile-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-list" id="profile-list">
+                    <!-- Profiles rendered by JS -->
+                </div>
+                <button class="btn btn-accent btn-wide" id="btn-create-profile" style="margin-top: 16px;">
+                    <span>+</span> Create New Profile
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ CREATE / EDIT PROFILE MODAL ============ -->
+    <div class="modal-overlay" id="modal-profile-form">
+        <div class="modal profile-modal">
+            <div class="modal-header">
+                <h2 id="profile-form-title">Create Profile</h2>
+                <button class="modal-close" id="modal-profile-form-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-field">
+                    <label for="profile-name">Your Name</label>
+                    <input type="text" id="profile-name" class="form-input" placeholder="e.g. User" maxlength="30">
+                </div>
+                <div class="form-field">
+                    <label for="profile-tagline">Tagline <span class="hint">(optional)</span></label>
+                    <input type="text" id="profile-tagline" class="form-input" placeholder="e.g. CS Student • CET" maxlength="40">
+                </div>
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label for="profile-age">Age</label>
+                        <div class="input-unit-wrap">
+                            <input type="number" id="profile-age" class="form-input" placeholder="18" min="10" max="100">
+                            <span class="input-unit">years</span>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label for="profile-gender">Gender</label>
+                        <select id="profile-gender" class="form-input">
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label for="profile-height">Height</label>
+                        <div class="input-unit-wrap">
+                            <input type="number" id="profile-height" class="form-input" placeholder="170" min="100" max="250">
+                            <span class="input-unit">cm</span>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label for="profile-weight">Current Weight</label>
+                        <div class="input-unit-wrap">
+                            <input type="number" id="profile-weight" class="form-input" placeholder="65" min="20" max="300" step="0.1">
+                            <span class="input-unit">kg</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label for="profile-target-weight">Target Weight</label>
+                        <div class="input-unit-wrap">
+                            <input type="number" id="profile-target-weight" class="form-input" placeholder="70" min="20" max="300" step="0.1">
+                            <span class="input-unit">kg</span>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label for="profile-activity">Activity Level</label>
+                        <select id="profile-activity" class="form-input">
+                            <option value="1.2">Sedentary</option>
+                            <option value="1.375" selected>Lightly active</option>
+                            <option value="1.55">Moderately active</option>
+                            <option value="1.725">Very active</option>
+                            <option value="1.9">Athlete</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label for="profile-image">Profile Picture <span class="hint">(optional)</span></label>
+                    <input type="file" id="profile-image" class="form-input" accept="image/*">
+                </div>
+                <input type="hidden" id="profile-edit-id" value="">
+                <button class="btn btn-accent btn-wide" id="btn-save-profile" style="margin-top: 12px;">Save Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ FIRST-TIME SETUP OVERLAY ============ -->
+    <div class="first-time-overlay" id="first-time-overlay" style="display:none;">
+        <div class="first-time-card">
+            <div class="first-time-logo" style="border: none; background: transparent;">
+                <img src="logo.png" alt="NutriTrack" style="width: 80px; height: 80px; object-fit: contain;">
+            </div>
+            <h1 class="first-time-title">Welcome to <span style="color: var(--accent);">NutriTrack</span></h1>
+            <p class="first-time-sub">Your personal diet & nutrition tracker.<br>Let's set up your profile to get started!</p>
+            <div class="first-time-form">
+                <div class="form-field">
+                    <label for="setup-name">What's your name?</label>
+                    <input type="text" id="setup-name" class="form-input" placeholder="Enter your name" maxlength="30" autofocus>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label for="setup-age">Age</label>
+                        <div class="input-unit-wrap">
+                            <input type="number" id="setup-age" class="form-input" placeholder="18" min="10" max="100">
+                            <span class="input-unit">years</span>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label for="setup-gender">Gender</label>
+                        <select id="setup-gender" class="form-input">
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-field">
+                        <label for="setup-height">Height</label>
+                        <div class="input-unit-wrap">
+                            <input type="number" id="setup-height" class="form-input" placeholder="170" min="100" max="250">
+                            <span class="input-unit">cm</span>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label for="setup-weight">Current Weight</label>
+                        <div class="input-unit-wrap">
+                            <input type="number" id="setup-weight" class="form-input" placeholder="65" min="20" max="300" step="0.1">
+                            <span class="input-unit">kg</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label for="setup-image">Profile Picture <span class="hint">(optional)</span></label>
+                    <input type="file" id="setup-image" class="form-input" accept="image/*">
+                </div>
+                <button class="btn btn-accent btn-wide first-time-btn" id="btn-setup-start">
+                    🚀 Let's Go!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
